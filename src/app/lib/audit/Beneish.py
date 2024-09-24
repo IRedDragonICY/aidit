@@ -122,10 +122,9 @@ class BeneishMScoreCalculator:
         """
         if score < -2.22:
             return 'Unlikely'
-        elif -2.22 <= score <= 1.78:
+        if -2.22 <= score <= 1.78:
             return 'Possible'
-        else:
-            return 'Likely'
+        return 'Likely'
 
     def get_results(self) -> pd.DataFrame:
         """
