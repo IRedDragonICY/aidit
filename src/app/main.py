@@ -1,8 +1,5 @@
 import pandas as pd
-from lib.audit.Beneish import calculate_beneish_m_score
-
-from fastapi import FastAPI
-app = FastAPI()
+from lib.audit.Beneish import BeneishMScoreCalculator
 
 # Sample financial data for a single company over multiple years
 data = {
@@ -24,6 +21,8 @@ data = {
 
 df = pd.DataFrame(data)
 
-result = calculate_beneish_m_score(df)
+calculator = BeneishMScoreCalculator(df)
 
-print(result)
+results = calculator.get_results()
+
+print(results)
