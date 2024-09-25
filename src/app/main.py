@@ -1,14 +1,13 @@
-import pandas as pd
-
-from lib.audit.Beneish import BeneishMScoreCalculator
 import json
-import pymupdf
-from llama_cpp import Llama
 
+import pandas as pd
+import pymupdf
+from lib.audit.Beneish import BeneishMScoreCalculator
+from llama_cpp import Llama
 
 doc = pymupdf.open("../test/pdf/financial_report_5_years.pdf")
 text = str(pymupdf.get_text(doc))
-system_prompt = '''
+system_prompt = """
 You are a specialized chatbot designed to convert financial data from PDF documents into a structured JSON format. Your primary function is to extract relevant information from the provided PDF content and organize it into the following JSON structure:
     {
         "Year":<array of years>,
@@ -28,17 +27,11 @@ You are a specialized chatbot designed to convert financial data from PDF docume
     }
 Write ONLY JSON data without codeblock to the standard output. The JSON data should be formatted as a single line without any leading or trailing whitespaces.
 write "END" in new line to finish the conversation.
-'''
+"""
 
 model_id = "./model/llm/14b/aidit-14b-instruct-q4_k_m-00001-of-00003.gguf"
 
-llm = Llama(
-      model_path=model_id,
-      n_gpu_layers = -1,
-      n_ctx = 4096,
-      verbose=True
-)
-
+llm = Llama(model_path=model_id, n_gpu_layers=-1, n_ctx=4096, verbose=True)
 
 output = llm.create_completion(
     prompt=f"{system_prompt}\n{text}",
@@ -50,8 +43,8 @@ output = llm.create_completion(
 
 answer = ""
 for item in output:
-      answer+=item['choices'][0]['text']
-      print(item['choices'][0]['text'], end='')
+    answer += item["choices"][0]["text"]
+    print(item["choices"][0]["text"], end="")
 
 financial_data_json = answer
 financial_data = json.loads(financial_data_json)
