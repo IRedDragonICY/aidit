@@ -1,14 +1,14 @@
 # main.py
-import pandas as pd
-import fitz
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
 import math
-import numpy as np
 
-from lib.Chatbot import Chatbot
+import fitz
+import numpy as np
+import pandas as pd
+from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
 from lib.audit.Beneish import BeneishMScoreCalculator
+from lib.Chatbot import Chatbot
 
 app = FastAPI()
 
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def remove_nan_and_inf(obj):
     if isinstance(obj, dict):
@@ -33,6 +34,7 @@ def remove_nan_and_inf(obj):
     else:
         return obj
 
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
@@ -46,10 +48,22 @@ async def upload_file(file: UploadFile = File(...)):
         financial_data = chatbot.extract_financial_data(text)
         df = pd.DataFrame(financial_data)
 
-        required_columns = ["Year", "Net Receivables", "Sales", "Cost of Goods Sold",
-                            "Current Assets", "PPE", "Net PPE", "Securities", "Total Assets",
-                            "Depreciation Expense", "SG&A Expenses", "Total Debt",
-                            "Income from Continuing Operations", "Cash from Operations"]
+        required_columns = [
+            "Year",
+            "Net Receivables",
+            "Sales",
+            "Cost of Goods Sold",
+            "Current Assets",
+            "PPE",
+            "Net PPE",
+            "Securities",
+            "Total Assets",
+            "Depreciation Expense",
+            "SG&A Expenses",
+            "Total Debt",
+            "Income from Continuing Operations",
+            "Cash from Operations",
+        ]
         for col in required_columns:
             if col not in df.columns:
                 df[col] = 0
@@ -62,13 +76,15 @@ async def upload_file(file: UploadFile = File(...)):
         results = calculator.get_results()
 
         if isinstance(results, pd.DataFrame):
-            results = results.to_dict(orient='records')
+            results = results.to_dict(orient="records")
         elif isinstance(results, pd.Series):
             results = results.to_dict()
         elif isinstance(results, dict):
             for key, value in results.items():
                 if isinstance(value, (pd.DataFrame, pd.Series)):
-                    results[key] = value.to_dict(orient='records' if isinstance(value, pd.DataFrame) else 'dict')
+                    results[key] = value.to_dict(
+                        orient="records" if isinstance(value, pd.DataFrame) else "dict"
+                    )
 
         results = remove_nan_and_inf(results)
 
