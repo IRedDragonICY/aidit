@@ -1,10 +1,19 @@
 import json
+
 from llama_cpp import Llama
+
 
 class Chatbot:
     def __init__(self, n_gpu_layers=-1, n_ctx=4096, verbose=True):
-        self.model_path = "./model/llm/14b/aidit-14b-instruct-q4_k_m-00001-of-00003.gguf"
-        self.llm = Llama(model_path=self.model_path, n_gpu_layers=n_gpu_layers, n_ctx=n_ctx, verbose=verbose)
+        self.model_path = (
+            "./model/llm/14b/aidit-14b-instruct-q4_k_m-00001-of-00003.gguf"
+        )
+        self.llm = Llama(
+            model_path=self.model_path,
+            n_gpu_layers=n_gpu_layers,
+            n_ctx=n_ctx,
+            verbose=verbose,
+        )
         self.system_prompt = """
         You are a specialized chatbot designed to convert financial data from PDF documents into a structured JSON format. Your primary function is to extract relevant information from the provided PDF content and organize it into the following JSON structure:
             {

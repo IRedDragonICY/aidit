@@ -1,8 +1,7 @@
 import pandas as pd
 import pymupdf
-
-from lib.Chatbot import Chatbot
 from lib.audit.Beneish import BeneishMScoreCalculator
+from lib.Chatbot import Chatbot
 
 doc = pymupdf.open("../test/pdf/financial_report_5_years.pdf")
 text = str(pymupdf.get_text(doc))
