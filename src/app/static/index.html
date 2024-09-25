@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot Pemrosesan PDF</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+    body {
+        padding-top: 50px;
+    }
+    #loading {
+        display: none;
+    }
+    #results {
+        display: none;
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center">Unggah File PDF untuk Diproses</h1>
+    <form id="upload-form">
+        <div class="form-group">
+            <label for="pdfFile">Pilih file PDF:</label>
+            <input type="file" class="form-control-file" id="pdfFile" name="pdfFile" accept="application/pdf" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Unggah dan Proses</button>
+    </form>
+    <div id="loading" class="text-center mt-3">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Memproses...</span>
+        </div>
+        <p>File Anda sedang diproses, harap tunggu...</p>
+    </div>
+    <div id="results" class="mt-3">
+        <h3>Hasil:</h3>
+        <pre id="results-content"></pre>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+    $('#upload-form').on('submit', function(e){
+        e.preventDefault();
+        var formData = new FormData();
+        var fileInput = $('#pdfFile')[0];
+        if (fileInput.files.length === 0) {
+            alert("Silakan pilih file PDF.");
+            return;
+        }
+        formData.append('file', fileInput.files[0]);
+
+        $('#loading').show();
+        $('#results').hide();
+
+        $.ajax({
+            url: '/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response){
+                $('#loading').hide();
+                if (response.status == "success") {
+                    $('#results-content').text(JSON.stringify(response.results, null, 2));
+                    $('#results').show();
+                } else {
+                    alert("Error: " + response.message);
+                }
+            },
+            error: function(xhr, status, error){
+                $('#loading').hide();
+                alert("Terjadi kesalahan saat memproses file.");
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>

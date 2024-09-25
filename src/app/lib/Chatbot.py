@@ -48,5 +48,5 @@ class Chatbot:
         answer = ""
         for item in output:
             answer += item["choices"][0]["text"]
-
+            print(item["choices"][0]["text"], end="")
         return json.loads(answer)
