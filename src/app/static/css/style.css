@@ -7,6 +7,8 @@
     --text-color: #ffffff;
     --text-muted-color: #b5b5b5;
     --error-color: #ff6b6b;
+    --progress-bg-color: #2e2e2e;
+    --progress-text-color: #f1c40f;
 }
 
 body, html {
@@ -125,7 +127,13 @@ body, html {
 }
 
 .message {
+    display: flex;
+    align-items: flex-end;
     margin-bottom: 15px;
+}
+
+.message.user {
+    flex-direction: row-reverse;
 }
 
 .message.user .message-content {
@@ -146,6 +154,23 @@ body, html {
     padding: 10px 15px;
     border-radius: 20px;
     max-width: 75%;
+}
+
+.message-actions {
+    display: flex;
+    flex-direction: column;
+    margin: 0 10px;
+}
+
+.message-actions .btn {
+    background-color: transparent;
+    color: var(--text-muted-color);
+    border: none;
+    padding: 5px;
+}
+
+.message-actions .btn:hover {
+    color: var(--text-color);
 }
 
 .form-control, .btn {
@@ -188,4 +213,18 @@ body, html {
 
 #toggle-sidebar:focus {
     outline: none;
+}
+
+/* Progress Area Styles */
+.progress-area {
+    background-color: var(--progress-bg-color);
+    color: var(--progress-text-color);
+    padding: 10px;
+    margin: 0 15px 15px 15px;
+    border-radius: 5px;
+}
+
+.progress-content {
+    font-size: 14px;
+    line-height: 1.5;
 }

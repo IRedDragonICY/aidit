@@ -5,10 +5,12 @@ import time
 import numpy as np
 import pandas as pd
 import fitz  # PyMuPDF
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+import asyncio
 
 from lib.Chatbot import Chatbot
 from lib.audit.Beneish import BeneishMScoreCalculator
@@ -41,43 +43,111 @@ def prepare_results_for_json(results):
         return results
 
 
-@app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+@app.websocket("/ws/chat")
+async def websocket_chat(websocket: WebSocket):
+    await websocket.accept()
+    chatbot = Chatbot()
+    loop = asyncio.get_event_loop()
+    stop_event = asyncio.Event()
+
     try:
-        contents = await file.read()
-        with fitz.open(stream=contents, filetype="pdf") as doc:
-            text = "".join(page.get_text() for page in doc)
+        # Send initial greeting
+        def send_token(token_text):
+            asyncio.run_coroutine_threadsafe(websocket.send_text(token_text), loop)
 
-        chatbot = Chatbot()
-        financial_data = chatbot.extract_financial_data(text)
-        df = pd.DataFrame(financial_data)
+        await asyncio.to_thread(chatbot.get_initial_greeting, callback=send_token)
+        await websocket.send_json({"status": "completed"})
 
-        required_columns = [
-            "Year",
-            "Net Receivables",
-            "Sales",
-            "Cost of Goods Sold",
-            "Current Assets",
-            "PPE",
-            "Net PPE",
-            "Securities",
-            "Total Assets",
-            "Depreciation Expense",
-            "SG&A Expenses",
-            "Total Debt",
-            "Income from Continuing Operations",
-            "Cash from Operations",
-        ]
-        df = df.reindex(columns=required_columns, fill_value=0)
-        df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+        while True:
+            data = await websocket.receive_json()
+            command = data.get('command')
 
-        calculator = BeneishMScoreCalculator(df)
-        results = calculator.get_results()
-        processed_results = prepare_results_for_json(results)
+            if command == 'upload_file':
+                pdf_bytes = bytes(data['pdf_bytes'])
+                with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+                    text = "".join(page.get_text() for page in doc)
+                # Extract financial data
+                def send_extract_progress(token_text):
+                    asyncio.run_coroutine_threadsafe(websocket.send_text(token_text), loop)
 
-        return JSONResponse(content={"status": "success", "results": processed_results})
+                try:
+                    financial_data = await asyncio.to_thread(
+                        chatbot.extract_financial_data, text, callback=send_extract_progress
+                    )
+                    df = pd.DataFrame(financial_data)
+
+                    required_columns = [
+                        "Year",
+                        "Net Receivables",
+                        "Sales",
+                        "Cost of Goods Sold",
+                        "Current Assets",
+                        "PPE",
+                        "Net PPE",
+                        "Securities",
+                        "Total Assets",
+                        "Depreciation Expense",
+                        "SG&A Expenses",
+                        "Total Debt",
+                        "Income from Continuing Operations",
+                        "Cash from Operations",
+                    ]
+                    df = df.reindex(columns=required_columns, fill_value=0)
+                    df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+
+                    calculator = BeneishMScoreCalculator(df)
+                    results = calculator.get_results()
+                    processed_results = prepare_results_for_json(results)
+
+                    ai_message = "File Anda telah berhasil diproses dan dianalisis."
+                    chatbot.conversation_history.append({'role': 'AIdit', 'content': ai_message})
+
+                    await websocket.send_json({"status": "file_processed", "results": processed_results})
+                except Exception as e:
+                    await websocket.send_json({"error": str(e)})
+                finally:
+                    stop_event.clear()
+            elif command == 'user_message':
+                user_input = data['message']
+
+                def send_chat_token(token_text):
+                    if not stop_event.is_set():
+                        asyncio.run_coroutine_threadsafe(websocket.send_text(token_text), loop)
+
+                response_task = asyncio.create_task(
+                    asyncio.to_thread(
+                        chatbot.chat_with_aidit, user_input, callback=send_chat_token
+                    )
+                )
+                await response_task
+                await websocket.send_json({"status": "completed"})
+                stop_event.clear()
+            elif command == 'regenerate':
+                def send_regen_token(token_text):
+                    asyncio.run_coroutine_threadsafe(websocket.send_text(token_text), loop)
+
+                response = await asyncio.to_thread(chatbot.regenerate_last_response, callback=send_regen_token)
+                await websocket.send_json({"status": "completed"})
+                stop_event.clear()
+            elif command == 'reset':
+                chatbot.reset_conversation()
+                await websocket.send_json({"status": "reset_completed"})
+                stop_event.clear()
+            elif command == 'stop':
+                stop_event.set()
+                await websocket.send_json({"status": "stopped"})
+            elif command == 'delete_message':
+                message_index = data.get('message_index')
+                if 0 <= message_index < len(chatbot.conversation_history):
+                    chatbot.conversation_history.pop(message_index)
+                    await websocket.send_json({"status": "message_deleted"})
+                else:
+                    await websocket.send_json({"error": "Invalid message index"})
+                stop_event.clear()
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
     except Exception as e:
-        return JSONResponse(content={"status": "error", "message": str(e)})
+        await websocket.send_json({"error": str(e)})
 
 
 @app.get("/")
@@ -88,7 +158,7 @@ async def read_index():
 
 
 def open_browser():
-    time.sleep(2)  # Tunggu sebentar hingga server siap
+    time.sleep(2)
     webbrowser.open("http://localhost:1010")
 
 

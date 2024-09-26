@@ -6,7 +6,7 @@
     <title>AIdit</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome untuk ikon -->
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -38,39 +38,23 @@
         </nav>
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Upload Section -->
-            <div id="upload-section" class="upload-section">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h3 class="card-title text-center mb-4">Unggah File PDF untuk Diproses</h3>
-                        <form id="upload-form">
-                            <div class="mb-3">
-                                <label for="pdfFile" class="form-label"><i class="fa fa-file-pdf text-danger"></i> Pilih File PDF:</label>
-                                <input type="file" class="form-control" id="pdfFile" name="pdfFile" accept="application/pdf" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100"><i class="fa fa-upload"></i> Unggah dan Proses</button>
-                        </form>
-                        <div id="loading" class="text-center mt-4" style="display: none;">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Memproses...</span>
-                            </div>
-                            <p class="mt-2">File Anda sedang diproses, harap tunggu...</p>
-                        </div>
-                        <div id="upload-error" class="alert alert-danger mt-3 d-none" role="alert">
-                            Terjadi kesalahan saat memproses file.
-                        </div>
+            <!-- Chat Section -->
+            <div id="chat-section" class="chat-section">
+                <div class="chat-box" id="chat-box">
+                    <!-- Messages will appear here -->
+                </div>
+                <!-- Progress Area -->
+                <div id="progress-area" class="progress-area" style="display: none;">
+                    <div class="progress-content">
+                        <p id="progress-text"></p>
                     </div>
                 </div>
-            </div>
-            <!-- Chat Section -->
-            <div id="chat-section" class="chat-section" style="display: none;">
-                <div class="chat-box" id="chat-box">
-                    <!-- Pesan akan muncul di sini -->
-                </div>
+                <!-- Chat Input -->
                 <div class="chat-input">
                     <form id="chat-form" class="d-flex">
                         <input type="text" class="form-control me-2" id="user-input" placeholder="Tulis pesan Anda..." required>
                         <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i></button>
+                        <button type="button" id="stop-button" class="btn btn-danger ms-2"><i class="fa fa-stop"></i></button>
                     </form>
                 </div>
             </div>
