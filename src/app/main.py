@@ -1,14 +1,17 @@
-import math
+import threading
+import webbrowser
+import time
 
-import fitz
 import numpy as np
 import pandas as pd
+import fitz  # PyMuPDF
 from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from lib.audit.Beneish import BeneishMScoreCalculator
+
 from lib.Chatbot import Chatbot
+from lib.audit.Beneish import BeneishMScoreCalculator
 
 app = FastAPI()
 
@@ -25,18 +28,17 @@ app.mount("/css", StaticFiles(directory="static/css"), name="css")
 app.mount("/js", StaticFiles(directory="static/js"), name="js")
 
 
-def remove_nan_and_inf(obj):
-    if isinstance(obj, dict):
-        return {k: remove_nan_and_inf(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [remove_nan_and_inf(x) for x in obj]
-    elif isinstance(obj, float):
-        if math.isnan(obj) or math.isinf(obj):
-            return None
-        else:
-            return obj
+def prepare_results_for_json(results):
+    if isinstance(results, pd.DataFrame):
+        results = results.replace([np.inf, -np.inf], np.nan).fillna(0)
+        return results.to_dict(orient='records')
+    elif isinstance(results, pd.Series):
+        results = results.replace([np.inf, -np.inf], np.nan).fillna(0)
+        return results.to_dict()
+    elif isinstance(results, dict):
+        return {key: prepare_results_for_json(value) for key, value in results.items()}
     else:
-        return obj
+        return results
 
 
 @app.post("/upload")
@@ -44,10 +46,8 @@ async def upload_file(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         with fitz.open(stream=contents, filetype="pdf") as doc:
-            text = ""
-            for page in doc:
-                text += page.get_text()
-        print(text)
+            text = "".join(page.get_text() for page in doc)
+
         chatbot = Chatbot()
         financial_data = chatbot.extract_financial_data(text)
         df = pd.DataFrame(financial_data)
@@ -68,31 +68,14 @@ async def upload_file(file: UploadFile = File(...)):
             "Income from Continuing Operations",
             "Cash from Operations",
         ]
-        for col in required_columns:
-            if col not in df.columns:
-                df[col] = 0
-
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df.fillna(0, inplace=True)
+        df = df.reindex(columns=required_columns, fill_value=0)
+        df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
 
         calculator = BeneishMScoreCalculator(df)
-
         results = calculator.get_results()
+        processed_results = prepare_results_for_json(results)
 
-        if isinstance(results, pd.DataFrame):
-            results = results.to_dict(orient="records")
-        elif isinstance(results, pd.Series):
-            results = results.to_dict()
-        elif isinstance(results, dict):
-            for key, value in results.items():
-                if isinstance(value, (pd.DataFrame, pd.Series)):
-                    results[key] = value.to_dict(
-                        orient="records" if isinstance(value, pd.DataFrame) else "dict"
-                    )
-
-        results = remove_nan_and_inf(results)
-
-        return JSONResponse(content={"status": "success", "results": results})
+        return JSONResponse(content={"status": "success", "results": processed_results})
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)})
 
@@ -104,7 +87,13 @@ async def read_index():
     return HTMLResponse(content=html_content)
 
 
+def open_browser():
+    time.sleep(2)  # Tunggu sebentar hingga server siap
+    webbrowser.open("http://localhost:1010")
+
+
 if __name__ == "__main__":
     import uvicorn
 
+    threading.Thread(target=open_browser).start()
     uvicorn.run("main:app", host="localhost", port=1010, reload=True)
