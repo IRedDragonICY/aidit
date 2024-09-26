@@ -8,197 +8,80 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome untuk ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            padding-top: 60px;
-        }
-        #loading {
-            display: none;
-        }
-        #chat-section {
-            display: none;
-        }
-        .chat-box {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            background-color: #ffffff;
-        }
-        .message {
-            margin-bottom: 15px;
-        }
-        .message.user .message-content {
-            background-color: #0d6efd;
-            color: #fff;
-            text-align: right;
-        }
-        .message.ai .message-content {
-            background-color: #e9ecef;
-            text-align: left;
-        }
-        .message-content {
-            display: inline-block;
-            padding: 10px 15px;
-            border-radius: 20px;
-            max-width: 75%;
-        }
-    </style>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Upload Section -->
-        <div id="upload-section" class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title text-center mb-4">Unggah File PDF untuk Diproses</h3>
-                <form id="upload-form">
-                    <div class="mb-3">
-                        <label for="pdfFile" class="form-label"><i class="fa fa-file-pdf text-danger"></i> Pilih File PDF:</label>
-                        <input type="file" class="form-control" id="pdfFile" name="pdfFile" accept="application/pdf" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100"><i class="fa fa-upload"></i> Unggah dan Proses</button>
-                </form>
-                <div id="loading" class="text-center mt-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Memproses...</span>
-                    </div>
-                    <p class="mt-2">File Anda sedang diproses, harap tunggu...</p>
-                </div>
-                <div id="upload-error" class="alert alert-danger mt-3 d-none" role="alert">
-                    Terjadi kesalahan saat memproses file.
-                </div>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <nav id="sidebar-section" class="sidebar collapsed">
+            <div class="sidebar-content">
+                <button id="toggle-sidebar" class="btn btn-link text-white mt-3">
+                    <i class="fa fa-bars fa-2x"></i>
+                </button>
+                <ul class="nav flex-column mt-4">
+                    <!-- Icons at the top -->
+                    <li class="nav-item">
+                        <a class="nav-link text-center" href="#">
+                            <i class="fa fa-home fa-2x"></i>
+                            <span class="link-text">Home</span>
+                        </a>
+                    </li>
+                </ul>
+                <!-- New Chat Button -->
+                <button id="new-chat-btn" class="btn btn-primary mt-auto mb-4">
+                    <i class="fa fa-plus"></i> <span class="button-text">New Chat</span>
+                </button>
             </div>
-        </div>
-
-        <!-- Chat Section -->
-        <div id="chat-section" class="card shadow-sm mt-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Chat dengan AI</h5>
-            </div>
-            <div class="card-body chat-box" id="chat-box">
-                <!-- Pesan akan muncul di sini -->
-            </div>
-            <div class="card-footer">
-                <form id="chat-form" class="d-flex">
-                    <input type="text" class="form-control me-2" id="user-input" placeholder="Tulis pesan Anda..." required>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Kirim</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap 5 JS dan dependensi -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery (optional, jika ingin tetap menggunakannya) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            // Handler untuk form upload
-            $('#upload-form').on('submit', function(e){
-                e.preventDefault();
-                var formData = new FormData();
-                var fileInput = $('#pdfFile')[0];
-                if (fileInput.files.length === 0) {
-                    alert("Silakan pilih file PDF.");
-                    return;
-                }
-                formData.append('file', fileInput.files[0]);
-
-                $('#loading').show();
-                $('#upload-error').addClass('d-none');
-
-                $.ajax({
-                    url: '/upload', // Ganti dengan endpoint backend Anda
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response){
-                        $('#loading').hide();
-                        if (response.status === "success") {
-                            // Tampilkan antarmuka chat
-                            $('#upload-section').slideUp();
-                            $('#chat-section').slideDown();
-                            // Anda bisa menyimpan token atau data lain dari response jika diperlukan
-                        } else {
-                            $('#upload-error').removeClass('d-none').text("Error: " + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error){
-                        $('#loading').hide();
-                        $('#upload-error').removeClass('d-none').text("Terjadi kesalahan saat memproses file.");
-                    }
-                });
-            });
-
-            // Handler untuk form chat
-            $('#chat-form').on('submit', function(e){
-                e.preventDefault();
-                var userInput = $('#user-input').val().trim();
-                if (userInput === "") return;
-
-                // Tampilkan pesan pengguna
-                appendMessage('user', userInput);
-                $('#user-input').val('');
-
-                // Scroll ke bawah
-                scrollChatToBottom();
-
-                // Kirim ke backend
-                $.ajax({
-                    url: '/chat', // Ganti dengan endpoint backend Anda
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ message: userInput }),
-                    success: function(response){
-                        if (response.status === "success") {
-                            appendMessage('ai', response.reply);
-                            scrollChatToBottom();
-                        } else {
-                            appendMessage('ai', "Maaf, terjadi kesalahan: " + response.message);
-                            scrollChatToBottom();
-                        }
-                    },
-                    error: function(xhr, status, error){
-                        appendMessage('ai', "Maaf, terjadi kesalahan saat mengirim pesan.");
-                        scrollChatToBottom();
-                    }
-                });
-            });
-
-            // Fungsi untuk menambahkan pesan ke chat
-            function appendMessage(sender, message) {
-                var messageClass = sender === 'user' ? 'user' : 'ai';
-                var messageElement = `
-                    <div class="message ${messageClass}">
-                        <div class="message-content">
-                            ${escapeHtml(message)}
+        </nav>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <div id="upload-section" class="upload-section">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h3 class="card-title text-center mb-4">Unggah File PDF untuk Diproses</h3>
+                        <form id="upload-form">
+                            <div class="mb-3">
+                                <label for="pdfFile" class="form-label"><i class="fa fa-file-pdf text-danger"></i> Pilih File PDF:</label>
+                                <input type="file" class="form-control" id="pdfFile" name="pdfFile" accept="application/pdf" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fa fa-upload"></i> Unggah dan Proses</button>
+                        </form>
+                        <div id="loading" class="text-center mt-4" style="display: none;">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Memproses...</span>
+                            </div>
+                            <p class="mt-2">File Anda sedang diproses, harap tunggu...</p>
+                        </div>
+                        <div id="upload-error" class="alert alert-danger mt-3 d-none" role="alert">
+                            Terjadi kesalahan saat memproses file.
                         </div>
                     </div>
-                `;
-                $('#chat-box').append(messageElement);
-            }
+                </div>
+            </div>
+            <!-- Chat Section -->
+            <div id="chat-section" class="chat-section" style="display: none;">
+                <div class="chat-box" id="chat-box">
+                    <!-- Pesan akan muncul di sini -->
+                </div>
+                <div class="chat-input">
+                    <form id="chat-form" class="d-flex">
+                        <input type="text" class="form-control me-2" id="user-input" placeholder="Tulis pesan Anda..." required>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
 
-            // Fungsi untuk scroll ke bawah
-            function scrollChatToBottom() {
-                var chatBox = $('#chat-box');
-                chatBox.scrollTop(chatBox[0].scrollHeight);
-            }
-
-            // Fungsi untuk mencegah XSS
-            function escapeHtml(text) {
-                var map = {
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#039;'
-                };
-                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-            }
-        });
-    </script>
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Script -->
+    <script src="./js/scripts.js"></script>
 </body>
 </html>
