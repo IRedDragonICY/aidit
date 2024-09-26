@@ -17,7 +17,7 @@ AIdit is an AI-based audit assistant designed to help users with audit-related t
 │   ├── css/
 │   │   └── style.css   # Styles for the web interface
 │   ├── js/
-│   │   └── scripts.js  # JavaScript for handling WebSocket and UI interactions
+│   │   └── script.js  # JavaScript for handling WebSocket and UI interactions
 │   └── index.html      # Main HTML file for the web interface
 ├── Beneish.py           # Beneish M-Score calculation logic
 ├── Chatbot.py           # Chatbot logic for interacting with AI and handling PDF data extraction
