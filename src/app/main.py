@@ -99,7 +99,7 @@ async def websocket_chat(websocket: WebSocket):
                     results = calculator.get_results()
                     processed_results = prepare_results_for_json(results)
 
-                    ai_message = "File Anda telah berhasil diproses dan dianalisis."
+                    ai_message = "Data keuangan Anda telah berhasil diekstrak dan dianalisis. Silakan ajukan pertanyaan mengenai data tersebut."
                     chatbot.conversation_history.append({'role': 'AIdit', 'content': ai_message})
 
                     await websocket.send_json({"status": "file_processed", "results": processed_results})

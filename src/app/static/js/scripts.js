@@ -1,4 +1,3 @@
-// scripts.js
 $(document).ready(function() {
     $('#toggle-sidebar').on('click', function() {
         $('#sidebar-section').toggleClass('collapsed');
@@ -11,7 +10,7 @@ $(document).ready(function() {
         chatSocket = new WebSocket('ws://localhost:1010/ws/chat');
 
         chatSocket.onopen = function() {
-            // Connection established, waiting for initial greeting
+            // Koneksi berhasil, menunggu pesan
         };
 
         chatSocket.onmessage = function(event) {
@@ -19,26 +18,28 @@ $(document).ready(function() {
                 const data = JSON.parse(event.data);
                 if (data.status === 'completed') {
                     isProcessing = false;
+                    $('#action-button i').removeClass('fa-stop').addClass('fa-paper-plane');
                     if ($('#chat-box .message.ai').length === 1) {
                         showFileUploadForm();
                     }
                 } else if (data.status === 'file_processed') {
                     isProcessing = false;
+                    $('#action-button i').removeClass('fa-stop').addClass('fa-paper-plane');
                     $('#loading').hide();
                     $('#progress-area').hide();
                     appendMessage('ai', "File berhasil diproses dan dianalisis.");
-                    // Remove the file upload form
+                    // Hapus form unggah file
                     $('#upload-form').closest('.message.ai').remove();
                 } else if (data.error) {
                     isProcessing = false;
+                    $('#action-button i').removeClass('fa-stop').addClass('fa-paper-plane');
                     $('#loading').hide();
                     $('#progress-area').hide();
-                    appendMessage('ai', "Maaf, terjadi kesalahan: " + data.error);
+                    appendMessage('ai', "Maaf, terjadi kesalahan: " + data.error, 'warning');
                     scrollChatToBottom();
                 } else if (data.status === 'reset_completed') {
                     $('#chat-box').empty();
                     appendMessage('ai', "Percakapan telah direset.");
-                } else if (data.status === 'message_deleted') {
                 }
             } else {
                 if (isProcessing && $('#progress-area').is(':visible')) {
@@ -51,7 +52,7 @@ $(document).ready(function() {
         };
 
         chatSocket.onerror = function(error) {
-            appendMessage('ai', "Maaf, terjadi kesalahan.");
+            appendMessage('ai', "Maaf, terjadi kesalahan pada koneksi.", 'warning');
             scrollChatToBottom();
         };
 
@@ -119,39 +120,38 @@ $(document).ready(function() {
 
                 $('#progress-area').show();
                 $('#progress-text').text('Memulai ekstraksi data...');
+
+                $('#action-button i').removeClass('fa-paper-plane').addClass('fa-stop');
             };
             reader.readAsArrayBuffer(file);
         });
     }
 
-    $('#chat-form').on('submit', function(e) {
-        e.preventDefault();
-
-        if (isProcessing) {
-            alert("Proses sedang berjalan, harap tunggu.");
-            return;
-        }
-
-        const userInput = $('#user-input').val().trim();
-        if (userInput === "") return;
-
-        appendMessage('user', userInput);
-        $('#user-input').val('');
-        scrollChatToBottom();
-
-        isProcessing = true;
-
-        chatSocket.send(JSON.stringify({
-            command: 'user_message',
-            message: userInput
-        }));
-    });
-
-    $('#stop-button').on('click', function() {
+    $('#action-button').on('click', function(e) {
         if (isProcessing) {
             chatSocket.send(JSON.stringify({ command: 'stop' }));
             isProcessing = false;
             $('#progress-area').hide();
+            $('#action-button i').removeClass('fa-stop').addClass('fa-paper-plane');
+        } else {
+            const userInput = $('#user-input').val().trim();
+            if (userInput === "") {
+                alert("Silakan tulis pesan Anda.");
+                return;
+            }
+
+            appendMessage('user', userInput);
+            $('#user-input').val('');
+            scrollChatToBottom();
+
+            isProcessing = true;
+
+            chatSocket.send(JSON.stringify({
+                command: 'user_message',
+                message: userInput
+            }));
+
+            $('#action-button i').removeClass('fa-paper-plane').addClass('fa-stop');
         }
     });
 
@@ -166,17 +166,19 @@ $(document).ready(function() {
         messageElement.remove();
     });
 
-    const appendMessage = (sender, message) => {
+    const appendMessage = (sender, message, type = 'message') => {
         const messageClass = sender === 'user' ? 'user' : 'ai';
+        const messageTypeClass = type === 'warning' ? 'warning' : '';
         const messageElement = `
-            <div class="message ${messageClass}">
+            <div class="message ${messageClass} ${messageTypeClass}">
                 <div class="message-content">
                     ${escapeHtml(message)}
                 </div>
+                ${type !== 'warning' ? `
                 <div class="message-actions">
                     <button class="btn btn-sm btn-secondary delete-button"><i class="fa fa-trash"></i></button>
                     ${sender === 'ai' ? '<button class="btn btn-sm btn-secondary regenerate-button"><i class="fa fa-sync"></i></button>' : ''}
-                </div>
+                </div>` : ''}
             </div>
         `;
         $('#chat-box').append(messageElement);
@@ -185,7 +187,7 @@ $(document).ready(function() {
     const appendToLastMessage = (sender, message) => {
         const messageClass = sender === 'user' ? 'user' : 'ai';
         const lastMessage = $('#chat-box .message').last();
-        if (lastMessage.length && lastMessage.hasClass(messageClass)) {
+        if (lastMessage.length && lastMessage.hasClass(messageClass) && !lastMessage.hasClass('warning')) {
             const contentDiv = lastMessage.find('.message-content');
             contentDiv.html(contentDiv.html() + escapeHtml(message));
         } else {
@@ -209,5 +211,6 @@ $(document).ready(function() {
         }
         isProcessing = true;
         chatSocket.send(JSON.stringify({ command: 'regenerate' }));
+        $('#action-button i').removeClass('fa-paper-plane').addClass('fa-stop');
     });
 });
