@@ -154,7 +154,7 @@ class BeneishMScoreCalculator:
         """
         if score < -2.22:
             return "Unlikely"
-        elif -2.22 <= score <= 1.78:
+        elif -2.22 <= score <= -1.78:
             return "Possible"
         else:
             return "Likely"

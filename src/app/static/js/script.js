@@ -27,7 +27,8 @@ $(document).ready(function() {
                     $('#action-button i').removeClass('fa-stop').addClass('fa-paper-plane');
                     $('#loading').hide();
                     $('#progress-area').hide();
-                    appendMessage('ai', "File berhasil diproses dan dianalisis.");
+                    // Tampilkan tabel analisis
+                    displayAnalysisResults(data.results);
                     // Hapus form unggah file
                     $('#upload-form').closest('.message.ai').remove();
                 } else if (data.error) {
@@ -128,6 +129,7 @@ $(document).ready(function() {
     }
 
     $('#action-button').on('click', function(e) {
+        e.preventDefault();
         if (isProcessing) {
             chatSocket.send(JSON.stringify({ command: 'stop' }));
             isProcessing = false;
@@ -213,4 +215,63 @@ $(document).ready(function() {
         chatSocket.send(JSON.stringify({ command: 'regenerate' }));
         $('#action-button i').removeClass('fa-paper-plane').addClass('fa-stop');
     });
+
+    const displayAnalysisResults = (results) => {
+        let tableHtml = `
+            <table id="analysis-results-table" class="table table-striped table-hover">
+                <thead>
+                    <tr>
+        `;
+
+        const columns = Object.keys(results[0]);
+        columns.forEach(column => {
+            tableHtml += `<th>${escapeHtml(column)}</th>`;
+        });
+
+        tableHtml += `
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        results.forEach(row => {
+            tableHtml += '<tr>';
+            columns.forEach(column => {
+                let cellData = row[column];
+                if (typeof cellData === 'number') {
+                    if (column === 'Year') {
+                        cellData = parseInt(cellData);
+                    } else {
+                        cellData = cellData.toFixed(4);
+                    }
+                }
+                tableHtml += `<td>${escapeHtml(cellData)}</td>`;
+            });
+            tableHtml += '</tr>';
+        });
+
+        tableHtml += `
+                </tbody>
+            </table>
+        `;
+
+        const messageElement = `
+            <div class="message ai">
+                <div class="message-content">
+                    <p>Berikut adalah hasil analisis Beneish M-Score:</p>
+                    ${tableHtml}
+                </div>
+            </div>
+        `;
+        $('#chat-box').append(messageElement);
+
+        $('#analysis-results-table').DataTable({
+            responsive: true,
+            paging: false,
+            searching: false,
+            info: false
+        });
+
+        scrollChatToBottom();
+    };
 });

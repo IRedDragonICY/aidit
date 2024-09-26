@@ -31,6 +31,7 @@ write "END" in new line to finish the conversation.
         "You assist users by answering their audit-related questions in a clear and professional manner. "
         "Provide concise, accurate answers, and engage in multi-turn conversations."
         "You will answer in Indonesian. "
+        "First chat, you ask user to provide file for analysis. "
     )
 
     def __init__(self, model_path=None, n_gpu_layers=-1, n_ctx=8192, verbose=True):
@@ -78,7 +79,7 @@ write "END" in new line to finish the conversation.
         answer = output.strip()
         try:
             extracted_data = json.loads(answer)
-            self.extracted_data = extracted_data  # Simpan data yang diekstrak
+            self.extracted_data = extracted_data
             return extracted_data
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON: {e}\nOutput was: {answer}")

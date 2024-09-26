@@ -51,7 +51,6 @@ async def websocket_chat(websocket: WebSocket):
     stop_event = asyncio.Event()
 
     try:
-        # Send initial greeting
         def send_token(token_text):
             asyncio.run_coroutine_threadsafe(websocket.send_text(token_text), loop)
 
@@ -66,7 +65,6 @@ async def websocket_chat(websocket: WebSocket):
                 pdf_bytes = bytes(data['pdf_bytes'])
                 with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
                     text = "".join(page.get_text() for page in doc)
-                # Extract financial data
                 def send_extract_progress(token_text):
                     asyncio.run_coroutine_threadsafe(websocket.send_text(token_text), loop)
 
@@ -99,7 +97,7 @@ async def websocket_chat(websocket: WebSocket):
                     results = calculator.get_results()
                     processed_results = prepare_results_for_json(results)
 
-                    ai_message = "Data keuangan Anda telah berhasil diekstrak dan dianalisis. Silakan ajukan pertanyaan mengenai data tersebut."
+                    ai_message = "Data keuangan Anda telah berhasil diekstrak dan dianalisis. Berikut adalah hasil analisisnya."
                     chatbot.conversation_history.append({'role': 'AIdit', 'content': ai_message})
 
                     await websocket.send_json({"status": "file_processed", "results": processed_results})

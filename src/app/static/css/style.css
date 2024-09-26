@@ -223,11 +223,44 @@ body, html {
     outline: none;
 }
 
-/* Progress Area Styles */
 .progress-area {
     background-color: var(--progress-bg-color);
     color: var(--progress-text-color);
     padding: 10px;
     margin: 0 15px 15px 15px;
     border-radius: 5px;
+}
+
+/* Styling khusus untuk tabel analisis */
+.message-content table {
+    width: 100%;
+    margin-top: 15px;
+    color: var(--text-color);
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: var(--text-color);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: var(--text-color);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: var(--primary-color-hover);
+    color: var(--text-color);
+}
+
+.dataTables_wrapper .dataTables_wrapper .dataTables_filter input {
+    background-color: var(--sidebar-bg-color);
+    color: var(--text-color);
+    border: none;
 }
